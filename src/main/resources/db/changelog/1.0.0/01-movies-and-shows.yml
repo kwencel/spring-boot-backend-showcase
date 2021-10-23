@@ -1,0 +1,75 @@
+databaseChangeLog:
+  - changeSet:
+      id: add movies table
+      author: kwencel
+      changes:
+        - createSequence:
+            sequenceName: movie_id_seq
+            incrementBy: 5
+        - createTable:
+            tableName: movie
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  defaultValueComputed: nextval('movie_id_seq')
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar
+                  constraints:
+                    nullable: false
+              - column:
+                  name: duration_mins
+                  type: smallint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: imdb_id
+                  # It seems the max length of an IMDB id is 24 https://www.themoviedb.org/talk/5e2aef2ac56d2d001a499736
+                  type: varchar(24)
+                  constraints:
+                    # Assumption: Every movie the cinema plays has an entry in IMDB.
+                    nullable: false
+                    unique: true
+  - changeSet:
+      id: add shows table
+      author: kwnecel
+      changes:
+        - createSequence:
+            sequenceName: show_id_seq
+            incrementBy: 10
+        - createTable:
+            tableName: show
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  defaultValueComputed: nextval('show_id_seq')
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: movie_id
+                  type: bigint
+                  constraints:
+                    foreignKeyName: show_movie_id_fkey
+                    references: movie(id)
+                    nullable: false
+              - column:
+                  name: date
+                  type: timestamp with timezone
+                  constraints:
+                    nullable: false
+              - column:
+                  name: room
+                  type: varchar
+                  constraints:
+                    nullable: false
+              - column:
+                  name: price_cents
+                  type: int
+                  constraints:
+                    nullable: false

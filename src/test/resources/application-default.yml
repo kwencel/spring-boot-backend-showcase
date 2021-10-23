@@ -1,0 +1,7 @@
+# This file contains the test-specific overrides of the main application.yml properties.
+# It has to be named 'application-default' instead of the 'application' in order to merge with the main properties
+# https://inspeerity.com/blog/setting-default-spring-profile-for-tests-with-override-option
+
+spring:
+  datasource:
+    url: jdbc:tc:postgresql:14.0:///test_db

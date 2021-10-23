@@ -1,0 +1,4 @@
+databaseChangeLog:
+  - include:
+      file: 01-movies-and-shows.yml
+      relativeToChangelogFile: true
