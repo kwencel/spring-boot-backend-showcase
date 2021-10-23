@@ -1,6 +1,5 @@
 spring:
   datasource:
-    url: jdbc:tc:postgresql:14.0:///test_db
     hikari:
       data-source-properties:
         # Performance optimizations regarding prepared statements and inserts/updates batching
@@ -9,6 +8,9 @@ spring:
         prepStmtCacheSqlLimit: 2048
         useServerPrepStmts: true
         rewriteBatchedStatements: true
+    url: jdbc:postgresql://localhost:5438/postgres
+    username: postgres
+    password: postgres
   jpa:
     hibernate:
       ddl-auto: none
@@ -21,3 +23,5 @@ spring:
         order_inserts: true
         order_updates: true
         generate_statistics: true
+  liquibase:
+    contexts: test
