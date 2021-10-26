@@ -25,5 +25,9 @@ spring:
         generate_statistics: true
   liquibase:
     contexts: test
+  jackson:
+    deserialization:
+      adjust-dates-to-context-time-zone: false
+
 springdoc:
   default-produces-media-type: application/json

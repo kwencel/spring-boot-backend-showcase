@@ -29,6 +29,7 @@ dependencies {
 	runtimeOnly("org.postgresql:postgresql")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testImplementation("io.projectreactor:reactor-test")
+	testImplementation(kotlin("test"))
 	testImplementation("org.testcontainers:testcontainers:1.16.0")
 	testImplementation("org.testcontainers:postgresql:1.16.0")
 }
