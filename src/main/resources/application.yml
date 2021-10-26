@@ -25,3 +25,5 @@ spring:
         generate_statistics: true
   liquibase:
     contexts: test
+springdoc:
+  default-produces-media-type: application/json
