@@ -1,5 +1,6 @@
 package io.github.kwencel.backendshowcase.movie
 
+import io.github.kwencel.backendshowcase.movie.detail.MovieDetailProvider
 import io.github.kwencel.backendshowcase.movie.dto.MovieCreationRequest
 import io.github.kwencel.backendshowcase.movie.dto.MovieDto
 import io.github.kwencel.backendshowcase.movie.dto.toDto
@@ -8,16 +9,23 @@ import io.github.kwencel.backendshowcase.show.ShowRepository
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import org.mockito.Mockito.`when`
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.core.io.buffer.DefaultDataBufferFactory
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.http.ResponseEntity
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.jdbc.JdbcTestUtils
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.WebTestClient.ListBodySpec
 import org.springframework.test.web.reactive.server.expectBody
 import org.springframework.test.web.reactive.server.expectBodyList
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
+import java.nio.ByteBuffer
 import java.time.OffsetDateTime
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -33,6 +41,9 @@ internal class MovieControllerRealDbTests {
 
     @Autowired
     private lateinit var showRepository: ShowRepository
+
+    @MockBean
+    private lateinit var movieDetailProvider: MovieDetailProvider<ImdbId>
 
     @Autowired
     private lateinit var webClient: WebTestClient
@@ -73,6 +84,20 @@ internal class MovieControllerRealDbTests {
         webClient.get()
             .uri("${MovieController.path}/-1").exchange()
             .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `get details`() {
+        val testResponse = "{\"Title\":\"The Fast and the Furious\"}"
+        val testBuffer = ByteBuffer.wrap(testResponse.toByteArray())
+        `when`(movieDetailProvider.getDetails("tt0232500")).thenReturn(
+            Mono.just(ResponseEntity.ok(Flux.just(DefaultDataBufferFactory.sharedInstance.wrap(testBuffer))))
+        )
+
+        webClient.get()
+            .uri("${MovieController.path}/1/details").exchange()
+            .expectStatus().isOk
+            .expectBody().json(testResponse)
     }
 
     @Test

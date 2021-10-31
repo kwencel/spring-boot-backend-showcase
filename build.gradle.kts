@@ -32,6 +32,7 @@ dependencies {
 	testImplementation(kotlin("test"))
 	testImplementation("org.testcontainers:testcontainers:1.16.0")
 	testImplementation("org.testcontainers:postgresql:1.16.0")
+	testImplementation("com.squareup.okhttp3:mockwebserver:4.9.2")
 }
 
 java.sourceCompatibility = JavaVersion.VERSION_11

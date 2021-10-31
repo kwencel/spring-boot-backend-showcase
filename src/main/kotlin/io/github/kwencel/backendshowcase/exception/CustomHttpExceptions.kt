@@ -11,3 +11,6 @@ open class CustomHttpException(
 
 class ResourceNotFoundException(id: Any)
     : CustomHttpException(NOT_FOUND, 1, "Resource with id=$id has not been found.")
+
+class MovieDetailsDisabledException
+    : CustomHttpException(SERVICE_UNAVAILABLE, 2, "Movie details fetching feature is currently unavailable")

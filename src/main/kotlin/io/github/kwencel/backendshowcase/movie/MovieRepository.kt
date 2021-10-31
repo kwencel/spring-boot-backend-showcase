@@ -12,4 +12,6 @@ interface MovieRepository: JpaRepository<Movie, MovieId> {
     @EntityGraph(attributePaths = ["shows"])
     @Query("SELECT m FROM Movie m")
     fun <T> findWithEagerShowsAll(type: Class<T>): List<T>
+
+    fun <T> findById(id: MovieId, type: Class<T>): T?
 }

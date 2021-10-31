@@ -28,6 +28,8 @@ spring:
   jackson:
     deserialization:
       adjust-dates-to-context-time-zone: false
-
+movie-detail-provider:
+    omdb:
+      url: https://www.omdbapi.com
 springdoc:
   default-produces-media-type: application/json
