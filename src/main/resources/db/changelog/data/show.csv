@@ -1,2 +1,3 @@
 id;movie_id;date;room;price_cents
 1;1;2021-10-20 17:00:00;Room 1;800
+2;5;2021-10-31 21:00:00;Room 2;1100

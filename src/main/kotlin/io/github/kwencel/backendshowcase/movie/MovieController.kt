@@ -7,6 +7,8 @@ import io.github.kwencel.backendshowcase.movie.detail.MovieDetailProvider
 import io.github.kwencel.backendshowcase.movie.dto.MovieCreationRequest
 import io.github.kwencel.backendshowcase.movie.dto.MovieDto
 import io.github.kwencel.backendshowcase.movie.dto.toDto
+import io.github.kwencel.backendshowcase.show.dto.ShowDto
+import io.github.kwencel.backendshowcase.show.dto.toDto
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.headers.Header
@@ -54,6 +56,18 @@ class MovieController(private val movieService: MovieService,
     fun getDetails(@PathVariable("id") id: MovieId): Mono<ResponseEntity<Flux<DataBuffer>>> {
         val imdbId = movieService.getImdbId(id) ?: throw ResourceNotFoundException(id)
         return movieDetailProvider?.getDetails(imdbId) ?: throw MovieDetailsDisabledException()
+    }
+
+    @GetMapping("/{id}/shows")
+    @Operation(summary = "Get shows for a particular movie")
+    @Parameter(name = "id", description = "ID of the movie to get the shows for", required = true)
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Shows has been returned successfully"),
+        ApiResponse(responseCode = "404", description = "Movie does not exist"),
+    ])
+    fun getShows(@PathVariable("id") id: MovieId): List<ShowDto> {
+        val movie = movieService.viewById(id) ?: throw ResourceNotFoundException(id)
+        return movie.shows.map { it.toDto() }
     }
 
     @PostMapping

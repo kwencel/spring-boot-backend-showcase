@@ -1,6 +1,8 @@
-package io.github.kwencel.backendshowcase.show
+package io.github.kwencel.backendshowcase.show.dto
 
 import io.github.kwencel.backendshowcase.movie.MovieId
+import io.github.kwencel.backendshowcase.show.Show
+import io.github.kwencel.backendshowcase.show.ShowId
 import io.github.kwencel.backendshowcase.show.view.ShowView
 import java.time.OffsetDateTime
 

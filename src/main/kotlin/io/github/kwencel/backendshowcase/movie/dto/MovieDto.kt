@@ -4,8 +4,8 @@ import io.github.kwencel.backendshowcase.movie.ImdbId
 import io.github.kwencel.backendshowcase.movie.Movie
 import io.github.kwencel.backendshowcase.movie.MovieId
 import io.github.kwencel.backendshowcase.movie.view.MovieWithShowsView
-import io.github.kwencel.backendshowcase.show.ShowDto
-import io.github.kwencel.backendshowcase.show.toDto
+import io.github.kwencel.backendshowcase.show.dto.ShowDto
+import io.github.kwencel.backendshowcase.show.dto.toDto
 import javax.validation.constraints.Size
 
 data class MovieDto(val id: MovieId,
