@@ -1,5 +1,6 @@
 package io.github.kwencel.backendshowcase.exception
 
+import io.github.kwencel.backendshowcase.movie.MovieId
 import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatus.*
 
@@ -14,3 +15,6 @@ class ResourceNotFoundException(id: Any)
 
 class MovieDetailsDisabledException
     : CustomHttpException(SERVICE_UNAVAILABLE, 2, "Movie details fetching feature is currently unavailable")
+
+class MovieRatingNotFoundException(id: MovieId)
+    : CustomHttpException(NOT_FOUND, 3, "You have not rated movie {id=$id} yet.")

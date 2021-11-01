@@ -4,6 +4,9 @@ import io.github.kwencel.backendshowcase.movie.detail.MovieDetailProvider
 import io.github.kwencel.backendshowcase.movie.dto.MovieCreationRequest
 import io.github.kwencel.backendshowcase.movie.dto.MovieDto
 import io.github.kwencel.backendshowcase.movie.dto.toDto
+import io.github.kwencel.backendshowcase.rating.Rating
+import io.github.kwencel.backendshowcase.rating.RatingRepository
+import io.github.kwencel.backendshowcase.rating.dto.RatingUpdateRequest
 import io.github.kwencel.backendshowcase.show.Show
 import io.github.kwencel.backendshowcase.show.ShowRepository
 import org.junit.jupiter.api.BeforeAll
@@ -18,6 +21,7 @@ import org.springframework.core.io.buffer.DefaultDataBufferFactory
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.ResponseEntity
 import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.jdbc.JdbcTestUtils
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.WebTestClient.ListBodySpec
@@ -42,6 +46,9 @@ internal class MovieControllerRealDbTests {
     @Autowired
     private lateinit var showRepository: ShowRepository
 
+    @Autowired
+    private lateinit var ratingRepository: RatingRepository
+
     @MockBean
     private lateinit var movieDetailProvider: MovieDetailProvider<ImdbId>
 
@@ -53,14 +60,17 @@ internal class MovieControllerRealDbTests {
 
     private lateinit var testMovieRecords: List<Movie>
     private lateinit var testShowRecords: List<Show>
+    private lateinit var testRatingRecords: List<Rating>
 
     private val moviesTableName = Movie::class.simpleName!!.lowercase()
     private val showsTableName = Show::class.simpleName!!.lowercase()
+    private val ratingTableName = Rating::class.simpleName!!.lowercase()
 
     @BeforeAll
     fun beforeAll() {
         testMovieRecords = movieRepository.findWithEagerShowsAll(Movie::class.java)
         testShowRecords = showRepository.findWithEagerMovieAll(Show::class.java)
+        testRatingRecords = ratingRepository.findWithEagerMovieAll(Rating::class.java)
     }
 
     @Test
@@ -101,6 +111,7 @@ internal class MovieControllerRealDbTests {
     }
 
     @Test
+    @WithMockUser(roles = ["ADMIN"])
     fun `create movie`() {
         val imdbId = "tt0816692"
         val request = MovieCreationRequest("Interstellar", 169, imdbId)
@@ -130,6 +141,15 @@ internal class MovieControllerRealDbTests {
     }
 
     @Test
+    @WithMockUser(roles = ["USER"])
+    fun `create movie (no admin)`() {
+        webClient.post()
+            .uri(MovieController.path).exchange()
+            .expectStatus().isForbidden
+    }
+
+    @Test
+    @WithMockUser(roles = ["ADMIN"])
     fun `delete movie (exists)`() {
         val imdbId = "tt0372784"
         try {
@@ -156,10 +176,119 @@ internal class MovieControllerRealDbTests {
     }
 
     @Test
-    fun `delete (not exists)`() {
+    @WithMockUser(roles = ["ADMIN"])
+    fun `delete movie (not exists)`() {
         webClient.delete()
             .uri("${MovieController.path}/-1").exchange()
             .expectStatus().isNotFound
+    }
+
+    @Test
+    @WithMockUser(roles = ["USER"])
+    fun `delete movie (no admin)`() {
+        webClient.delete()
+            .uri("${MovieController.path}/-1").exchange()
+            .expectStatus().isForbidden
+    }
+
+    @Test
+    @WithMockUser(username = "user1")
+    fun `add rating (movie exists)`() {
+        try {
+            webClient.put()
+                .uri("${MovieController.path}/1/rating")
+                .bodyValue(RatingUpdateRequest(5)).exchange()
+                .expectStatus().isNoContent
+
+            with(ratingRepository.findByUsernameAndMovieId("user1", 1)) {
+                assertNotNull(this)
+                assertEquals("user1", username)
+                assertEquals(1, movie.id)
+                assertEquals(5, this.value)
+            }
+        } finally {
+            JdbcTestUtils.deleteFromTableWhere(jdbcTemplate, ratingTableName, "username = 'user1'")
+            ensureDatabaseConsistency()
+        }
+    }
+
+    @Test
+    @WithMockUser(username = "user1")
+    fun `add rating (movie does not exist)`() {
+        try {
+            webClient.put()
+                .uri("${MovieController.path}/1/rating")
+                .bodyValue(RatingUpdateRequest(5)).exchange()
+                .expectStatus().isNoContent
+        } finally {
+            JdbcTestUtils.deleteFromTableWhere(jdbcTemplate, ratingTableName, "username = 'user1'")
+            ensureDatabaseConsistency()
+        }
+    }
+
+    @Test
+    @WithMockUser(username = "user1")
+    fun `add rating (below range)`() {
+        webClient.put()
+            .uri("${MovieController.path}/1/rating")
+            .bodyValue(RatingUpdateRequest(0)).exchange()
+            .expectStatus().isBadRequest
+    }
+
+    @Test
+    @WithMockUser(username = "user1")
+    fun `add rating (above range)`() {
+        webClient.put()
+            .uri("${MovieController.path}/1/rating")
+            .bodyValue(RatingUpdateRequest(0)).exchange()
+            .expectStatus().isBadRequest
+    }
+
+    @Test
+    fun `add rating (unauthenticated)`() {
+        webClient.put()
+            .uri("${MovieController.path}/1/rating").exchange()
+            .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `get rating (unauthenticated)`() {
+        webClient.get()
+            .uri("${MovieController.path}/1/rating").exchange()
+            .expectStatus().isUnauthorized
+    }
+
+    @Test
+    @WithMockUser(username = "user1")
+    fun `get rating (movies does not exist)`() {
+        webClient.get()
+            .uri("${MovieController.path}/-1/rating").exchange()
+            .expectStatus().isNotFound
+    }
+
+    @Test
+    @WithMockUser(username = "user1")
+    fun `get rating (rating does not exist)`() {
+        webClient.get()
+            .uri("${MovieController.path}/1/rating").exchange()
+            .expectStatus().isNotFound
+    }
+
+    @Test
+    @WithMockUser(username = "user2")
+    fun `get rating (exist)`() {
+        try {
+            val movieReference = movieRepository.getById(3)
+            ratingRepository.save(Rating("user2", movieReference, 3))
+
+            webClient.get()
+                .uri("${MovieController.path}/3/rating").exchange()
+                .expectStatus().isOk
+                .expectBody<Short>().isEqualTo(3)
+        } finally {
+            JdbcTestUtils.deleteFromTableWhere(jdbcTemplate, ratingTableName, "username = 'user2'")
+            ensureDatabaseConsistency()
+        }
     }
 
     private fun ensureDatabaseConsistency() {
@@ -167,5 +296,7 @@ internal class MovieControllerRealDbTests {
         assertEquals(testMovieRecords, dbMovieRecords, "$moviesTableName table got inconsistent after this test run!")
         val dbShowRecords = showRepository.findWithEagerMovieAll(Show::class.java)
         assertEquals(testShowRecords, dbShowRecords, "$showsTableName table got inconsistent after this test run!")
+        val dbRatingRecords = ratingRepository.findWithEagerMovieAll(Rating::class.java)
+        assertEquals(testRatingRecords, dbRatingRecords, "$ratingTableName table got inconsistent after this test run!")
     }
 }

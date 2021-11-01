@@ -57,10 +57,13 @@ class ShowController(private val showService: ShowService) {
 
     @PostMapping
     @Operation(summary = "Add a new show")
-    @ApiResponse(responseCode = "201", description = "Show has been added", content = [Content()], headers = [
-        Header(name = "Location", description = "URI to the created show", required = true)
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "201", description = "Show has been added", content = [Content()], headers = [
+            Header(name = "Location", description = "URI to the created show", required = true)
+        ]),
+        ApiResponse(responseCode = "401", description = "You are not authenticated", content = [Content()]),
+        ApiResponse(responseCode = "403", description = "You are unauthorized to do this operation", content = [Content()]),
     ])
-    // TODO secure the endpoint
     fun create(@RequestBody request: ShowCreationRequest): ResponseEntity<Unit> {
         val id = showService.create(request).id
         return ResponseEntity.created(URI.create("${path}/$id")).build()
@@ -71,10 +74,11 @@ class ShowController(private val showService: ShowService) {
     @Parameter(name = "id", description = "ID of the show to delete", required = true)
     @ApiResponses(value = [
         ApiResponse(responseCode = "204", description = "Movie has been deleted", content = [Content()]),
+        ApiResponse(responseCode = "401", description = "You are not authenticated", content = [Content()]),
+        ApiResponse(responseCode = "403", description = "You are unauthorized to do this operation", content = [Content()]),
         ApiResponse(responseCode = "404", description = "Movie does not exist", content = [Content()])
     ])
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    // TODO secure the endpoint
     fun delete(@PathVariable("id") id: ShowId) {
         try {
             return showService.delete(id)

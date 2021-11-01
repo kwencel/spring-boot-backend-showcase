@@ -14,6 +14,7 @@ import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWeb
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.jdbc.JdbcTestUtils
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.WebTestClient.ListBodySpec
@@ -93,6 +94,7 @@ internal class ShowControllerRealDbTests {
     }
 
     @Test
+    @WithMockUser(roles = ["ADMIN"])
     fun `create show`() {
         val movieId = 2L
         val date = OffsetDateTime.parse("2021-11-05T18:00:00+01")
@@ -126,7 +128,16 @@ internal class ShowControllerRealDbTests {
     }
 
     @Test
-    fun `delete show (exists)`() {
+    @WithMockUser(roles = ["USER"])
+    fun `create show (no admin)`() {
+        webClient.post()
+            .uri(ShowController.path).exchange()
+            .expectStatus().isForbidden
+    }
+
+    @Test
+    @WithMockUser(roles = ["ADMIN"])
+    fun `delete (exists)`() {
         val movieId = 3L
         val date = OffsetDateTime.parse("2021-11-06T15:00:00+01")
         val room = "Room 7"
@@ -154,10 +165,19 @@ internal class ShowControllerRealDbTests {
     }
 
     @Test
-    fun `delete (not exists)`() {
+    @WithMockUser(roles = ["ADMIN"])
+    fun `delete show (not exists)`() {
         webClient.delete()
             .uri("${ShowController.path}/-1").exchange()
             .expectStatus().isNotFound
+    }
+
+    @Test
+    @WithMockUser(roles = ["USER"])
+    fun `delete show (no admin)`() {
+        webClient.delete()
+            .uri("${ShowController.path}/-1").exchange()
+            .expectStatus().isForbidden
     }
 
     private fun ensureDatabaseConsistency() {

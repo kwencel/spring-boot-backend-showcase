@@ -1,6 +1,5 @@
 package io.github.kwencel.backendshowcase.show
 
-import io.github.kwencel.backendshowcase.movie.MovieId
 import org.springframework.data.jpa.repository.EntityGraph
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.CrudRepository

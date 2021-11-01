@@ -14,6 +14,8 @@ class MovieService(private val movieRepository: MovieRepository) {
 
     fun viewAll() = movieRepository.findWithEagerShowsAll(MovieWithShowsView::class.java)
 
+    fun exists(id: MovieId) = movieRepository.existsById(id)
+
     fun getImdbId(id: MovieId) = movieRepository.findById(id, MovieImdbIdView::class.java)?.imdbId
 
     fun create(request: MovieCreationRequest): MovieDto {

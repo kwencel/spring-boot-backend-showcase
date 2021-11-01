@@ -1,12 +1,15 @@
 package io.github.kwencel.backendshowcase.movie
 
 import io.github.kwencel.backendshowcase.exception.MovieDetailsDisabledException
+import io.github.kwencel.backendshowcase.exception.MovieRatingNotFoundException
 import io.github.kwencel.backendshowcase.exception.ResourceNotFoundException
 import io.github.kwencel.backendshowcase.movie.MovieController.Companion.path
 import io.github.kwencel.backendshowcase.movie.detail.MovieDetailProvider
 import io.github.kwencel.backendshowcase.movie.dto.MovieCreationRequest
 import io.github.kwencel.backendshowcase.movie.dto.MovieDto
 import io.github.kwencel.backendshowcase.movie.dto.toDto
+import io.github.kwencel.backendshowcase.rating.RatingService
+import io.github.kwencel.backendshowcase.rating.dto.RatingUpdateRequest
 import io.github.kwencel.backendshowcase.show.dto.ShowDto
 import io.github.kwencel.backendshowcase.show.dto.toDto
 import io.swagger.v3.oas.annotations.Operation
@@ -23,11 +26,14 @@ import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.net.URI
+import java.security.Principal
+import javax.validation.Valid
 
 @RestController
 @RequestMapping(path)
 class MovieController(private val movieService: MovieService,
-                      private val movieDetailProvider: MovieDetailProvider<ImdbId>?) {
+                      private val movieDetailProvider: MovieDetailProvider<ImdbId>?,
+                      private val ratingService: RatingService) {
 
     @GetMapping
     @Operation(summary = "Get all movies")
@@ -72,10 +78,13 @@ class MovieController(private val movieService: MovieService,
 
     @PostMapping
     @Operation(summary = "Add a new movie")
-    @ApiResponse(responseCode = "201", description = "Movie has been added", content = [Content()], headers = [
-        Header(name = "Location", description = "URI to the created movie", required = true)
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "201", description = "Movie has been added", content = [Content()], headers = [
+            Header(name = "Location", description = "URI to the created movie", required = true)
+        ]),
+        ApiResponse(responseCode = "401", description = "You are not authenticated", content = [Content()]),
+        ApiResponse(responseCode = "403", description = "You are unauthorized to do this operation", content = [Content()]),
     ])
-    // TODO secure the endpoint
     fun create(@RequestBody request: MovieCreationRequest): ResponseEntity<Unit> {
         val id = movieService.create(request).id
         return ResponseEntity.created(URI.create("$path/$id")).build()
@@ -86,16 +95,37 @@ class MovieController(private val movieService: MovieService,
     @Parameter(name = "id", description = "ID of the movie to delete", required = true)
     @ApiResponses(value = [
         ApiResponse(responseCode = "204", description = "Movie has been deleted", content = [Content()]),
+        ApiResponse(responseCode = "401", description = "You are not authenticated", content = [Content()]),
+        ApiResponse(responseCode = "403", description = "You are unauthorized to do this operation", content = [Content()]),
         ApiResponse(responseCode = "404", description = "Movie does not exist", content = [Content()])
     ])
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    // TODO secure the endpoint
     fun delete(@PathVariable("id") id: MovieId) {
         try {
             return movieService.delete(id)
         } catch (e: EmptyResultDataAccessException) {
             throw ResourceNotFoundException(id)
         }
+    }
+
+    @PutMapping("/{id}/rating")
+    @Operation(summary = "Rate a particular movie")
+    @Parameter(name = "id", description = "ID of the movie to rate", required = true)
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "204", description = "Movie has been rated", content = [Content()]),
+        ApiResponse(responseCode = "401", description = "You are not authenticated", content = [Content()]),
+        ApiResponse(responseCode = "404", description = "Movie or rating does not exist", content = [Content()])
+    ])
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun updateRating(@PathVariable("id") id: MovieId, @RequestBody @Valid request: RatingUpdateRequest, principal: Principal) {
+        if (!movieService.exists(id)) throw ResourceNotFoundException(id)
+        ratingService.updateRating(principal.name, id, request.rating)
+    }
+
+    @GetMapping("/{id}/rating")
+    fun getRating(@PathVariable("id") id: MovieId, principal: Principal): Short {
+        if (!movieService.exists(id)) throw ResourceNotFoundException(id)
+        return ratingService.getUserRating(principal.name, id)?.value ?: throw MovieRatingNotFoundException(id)
     }
 
     companion object {

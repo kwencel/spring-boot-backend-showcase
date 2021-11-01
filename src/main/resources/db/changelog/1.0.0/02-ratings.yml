@@ -1,0 +1,41 @@
+databaseChangeLog:
+  - changeSet:
+      id: add ratings table
+      author: kwencel
+      changes:
+        - createSequence:
+            sequenceName: rating_id_seq
+            incrementBy: 20
+        - createTable:
+            tableName: rating
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  defaultValueComputed: nextval('rating_id_seq')
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: username
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: movie_id
+                  type: bigint
+                  constraints:
+                    foreignKeyName: rating_movie_id_fkey
+                    references: movie(id)
+                    nullable: false
+              - column:
+                  name: value
+                  type: tinyint
+                  constraints:
+                    nullable: false
+        - sql:
+            sql: ALTER TABLE rating ADD CONSTRAINT rating_value_check CHECK (value >= 1 AND value <= 5)
+        - addUniqueConstraint:
+            tableName: rating
+            constraintName: rating_username_movie_id_key
+            columnNames: username, movie_id
