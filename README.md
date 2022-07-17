@@ -1,4 +1,17 @@
-# Backend showcase
+# A modern Spring Boot-based REST API backend showcase
+
+This is a simple backend application written in Spring Boot and Kotlin that simulates a cinema REST API.
+It provides an optional integration with [OMDb API](https://www.omdbapi.com) in order to fetch movie details and demonstrate how external API calls can be made.
+
+From this demo you can learn how to:
+- Use [WebFlux](https://docs.spring.io/spring-framework/docs/current/reference/html/web-reactive.html)-based stack instead of a traditional [WebMVC](https://docs.spring.io/spring-framework/docs/current/reference/html/web.html) stack
+- Use [Hibernate](https://hibernate.org) with its advanced features and best practices for achieving high performance
+- Use [Liquibase](https://www.liquibase.org) for running database migrations
+- Call external APIs and directly proxy their response instead of buffering it first
+- Document your API using [OpenAPI](https://www.openapis.org) and Swagger UI (https://swagger.io)
+- Enforce consistent error message bodies whether the error is thrown from your code or the framework itself
+- Write E2E tests with WebFlux-based stack and ensure the database is cleaned after every test
+- Use a real database in your tests thanks to [Test Containers](https://www.testcontainers.org)
 
 ## How to run
 In order to build the project (and also run the tests), you need to have Docker installed.
@@ -24,7 +37,7 @@ The application has been coded with such scenario in mind.
 
 The `-XX:MaxDirectMemorySize` parameter sets the maximum size of Direct Memory Buffers which can grow to enormous sizes if not limited.
 It is especially relevant when dealing with data streaming from external API (which I have used for OMDb handling).
-Overall, it is a good practice to limit various parts of JVM memory to have a consistent and predictable performance
+Overall, it is a good practise to limit various parts of JVM memory to have a consistent and predictable performance
 and resource usage.
 
 # Things that can be improved
